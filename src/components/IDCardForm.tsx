@@ -2,10 +2,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Upload } from "lucide-react";
+import type { FormData } from "@/types/idCard";
 
 interface IDCardFormProps {
   role: "student" | "employee";
-  formData: any;
+  formData: FormData;
   onFormChange: (field: string, value: string) => void;
   onPhotoUpload: (file: File) => void;
   onLogoUpload: (file: File) => void;

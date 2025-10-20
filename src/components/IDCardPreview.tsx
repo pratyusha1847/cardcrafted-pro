@@ -1,9 +1,9 @@
 import { QRCodeSVG } from "qrcode.react";
-import { Card } from "@/components/ui/card";
+import type { FormData } from "@/types/idCard";
 
 interface IDCardPreviewProps {
   role: "student" | "employee";
-  formData: any;
+  formData: FormData;
   photoPreview: string | null;
   logoPreview: string | null;
   cardRef: React.RefObject<HTMLDivElement>;

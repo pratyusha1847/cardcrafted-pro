@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import type { FormData } from "@/types/idCard";
 
 const Index = () => {
   const [selectedRole, setSelectedRole] = useState<"student" | "employee" | null>(null);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<FormData>({});
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -36,7 +37,7 @@ const Index = () => {
     try {
       const canvas = await html2canvas(cardRef.current, { scale: 2 });
       const link = document.createElement("a");
-      link.download = `id-card-${formData.idNumber || "preview"}.png`;
+      link.download = `id-card-${(formData as any).idNumber || "preview"}.png`;
       link.href = canvas.toDataURL();
       link.click();
       toast.success("ID Card downloaded successfully!");
