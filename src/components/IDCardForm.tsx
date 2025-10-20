@@ -1,8 +1,12 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Upload } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, AlertCircle } from "lucide-react";
 import type { FormData } from "@/types/idCard";
+import type { PhotoShape } from "@/types/templates";
+import { PhotoEditor } from "@/components/PhotoEditor";
+import { ValidationError, getFieldError } from "@/lib/validation";
 
 interface IDCardFormProps {
   role: "student" | "employee";
@@ -12,6 +16,9 @@ interface IDCardFormProps {
   onLogoUpload: (file: File) => void;
   photoPreview: string | null;
   logoPreview: string | null;
+  photoShape: PhotoShape;
+  onPhotoShapeChange: (shape: PhotoShape) => void;
+  validationErrors: ValidationError[];
 }
 
 export const IDCardForm = ({
@@ -22,6 +29,9 @@ export const IDCardForm = ({
   onLogoUpload,
   photoPreview,
   logoPreview,
+  photoShape,
+  onPhotoShapeChange,
+  validationErrors,
 }: IDCardFormProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "photo" | "logo") => {
     const file = e.target.files?.[0];
@@ -39,7 +49,7 @@ export const IDCardForm = ({
       <Card className="p-6 space-y-4 bg-gradient-to-br from-card to-card/50 shadow-[var(--shadow-card)]">
         {/* Photo Upload */}
         <div className="space-y-2">
-          <Label htmlFor="photo">Photo</Label>
+          <Label htmlFor="photo">Photo *</Label>
           <div className="flex items-center gap-4">
             <label
               htmlFor="photo"
@@ -51,6 +61,7 @@ export const IDCardForm = ({
                 <div className="text-center">
                   <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">Upload Photo</p>
+                  <p className="text-xs text-muted-foreground mt-1">Square photo, face centered</p>
                 </div>
               )}
             </label>
@@ -62,6 +73,7 @@ export const IDCardForm = ({
               className="hidden"
             />
           </div>
+          <PhotoEditor shape={photoShape} onShapeChange={onPhotoShapeChange} />
         </div>
 
         {/* Logo Upload */}
@@ -94,23 +106,37 @@ export const IDCardForm = ({
         {/* Common Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name">Full Name *</Label>
             <Input
               id="name"
               value={formData.name || ""}
               onChange={(e) => onFormChange("name", e.target.value)}
               placeholder="John Doe"
+              className={getFieldError(validationErrors, "name") ? "border-destructive" : ""}
             />
+            {getFieldError(validationErrors, "name") && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {getFieldError(validationErrors, "name")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="idNumber">{role === "student" ? "Roll Number" : "Employee ID"}</Label>
+            <Label htmlFor="idNumber">{role === "student" ? "Roll Number" : "Employee ID"} *</Label>
             <Input
               id="idNumber"
               value={formData.idNumber || ""}
               onChange={(e) => onFormChange("idNumber", e.target.value)}
               placeholder={role === "student" ? "STU2025-001" : "EMP2025-001"}
+              className={getFieldError(validationErrors, "idNumber") ? "border-destructive" : ""}
             />
+            {getFieldError(validationErrors, "idNumber") && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {getFieldError(validationErrors, "idNumber")}
+              </p>
+            )}
           </div>
         </div>
 
@@ -127,13 +153,20 @@ export const IDCardForm = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
+                <Label htmlFor="department">Department *</Label>
                 <Input
                   id="department"
                   value={formData.department || ""}
                   onChange={(e) => onFormChange("department", e.target.value)}
                   placeholder="Engineering"
+                  className={getFieldError(validationErrors, "department") ? "border-destructive" : ""}
                 />
+                {getFieldError(validationErrors, "department") && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {getFieldError(validationErrors, "department")}
+                  </p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -193,13 +226,61 @@ export const IDCardForm = ({
 
         <div className="space-y-2">
           <Label htmlFor="instituteName">
-            {role === "student" ? "Institute Name" : "Company Name"}
+            {role === "student" ? "Institute Name" : "Company Name"} *
           </Label>
           <Input
             id="instituteName"
             value={formData.instituteName || ""}
             onChange={(e) => onFormChange("instituteName", e.target.value)}
             placeholder={role === "student" ? "University of Technology" : "Tech Solutions Inc."}
+            className={getFieldError(validationErrors, "instituteName") ? "border-destructive" : ""}
+          />
+          {getFieldError(validationErrors, "instituteName") && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {getFieldError(validationErrors, "instituteName")}
+            </p>
+          )}
+        </div>
+
+        {/* Expiry Date & Additional Fields */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="expiryDate">Valid Until</Label>
+            <Input
+              id="expiryDate"
+              type="date"
+              value={formData.expiryDate || ""}
+              onChange={(e) => onFormChange("expiryDate", e.target.value)}
+              className={getFieldError(validationErrors, "expiryDate") ? "border-destructive" : ""}
+            />
+            {getFieldError(validationErrors, "expiryDate") && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {getFieldError(validationErrors, "expiryDate")}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContact">Emergency Contact</Label>
+            <Input
+              id="emergencyContact"
+              value={formData.emergencyContact || ""}
+              onChange={(e) => onFormChange("emergencyContact", e.target.value)}
+              placeholder="+1234567890"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="address">Address</Label>
+          <Textarea
+            id="address"
+            value={formData.address || ""}
+            onChange={(e) => onFormChange("address", e.target.value)}
+            placeholder="Full address"
+            rows={2}
           />
         </div>
       </Card>

@@ -11,4 +11,7 @@ export interface FormData {
   // Common fields
   department?: string;
   instituteName?: string;
+  expiryDate?: string;
+  emergencyContact?: string;
+  address?: string;
 }

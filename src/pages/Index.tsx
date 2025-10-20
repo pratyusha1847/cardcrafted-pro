@@ -2,21 +2,59 @@ import { useState, useRef } from "react";
 import { RoleSelector } from "@/components/RoleSelector";
 import { IDCardForm } from "@/components/IDCardForm";
 import { IDCardPreview } from "@/components/IDCardPreview";
+import { TemplateSelector } from "@/components/TemplateSelector";
+import { StyleCustomizer } from "@/components/StyleCustomizer";
 import { Button } from "@/components/ui/button";
-import { Download, Sparkles } from "lucide-react";
+import { Download, Sparkles, FlipHorizontal2 } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import type { FormData } from "@/types/idCard";
+import type { PhotoShape } from "@/types/templates";
+import { cardTemplates } from "@/lib/templates";
+import { validateForm, ValidationError } from "@/lib/validation";
 
 const Index = () => {
   const [selectedRole, setSelectedRole] = useState<"student" | "employee" | null>(null);
   const [formData, setFormData] = useState<FormData>({});
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(cardTemplates[0].id);
+  const [photoShape, setPhotoShape] = useState<PhotoShape>("rounded");
+  const [customPrimaryColor, setCustomPrimaryColor] = useState(cardTemplates[0].gradientStart);
+  const [customSecondaryColor, setCustomSecondaryColor] = useState(cardTemplates[0].gradientEnd);
+  const [showBack, setShowBack] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleFormChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    
+    // Clear validation errors for this field
+    if (validationErrors.length > 0) {
+      setValidationErrors(validationErrors.filter(e => e.field !== field));
+    }
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    const template = cardTemplates.find(t => t.id === templateId);
+    if (template) {
+      setCustomPrimaryColor(template.gradientStart);
+      setCustomSecondaryColor(template.gradientEnd);
+    }
+  };
+
+  const validateAndShowErrors = (): boolean => {
+    if (!selectedRole) return false;
+    const errors = validateForm(formData, selectedRole);
+    setValidationErrors(errors);
+    
+    if (errors.length > 0) {
+      toast.error(`Please fix ${errors.length} validation error${errors.length > 1 ? 's' : ''}`);
+      return false;
+    }
+    return true;
   };
 
   const handlePhotoUpload = (file: File) => {
@@ -33,6 +71,10 @@ const Index = () => {
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
+    
+    if (!validateAndShowErrors()) {
+      return;
+    }
     
     try {
       const canvas = await html2canvas(cardRef.current, { scale: 2 });
@@ -61,10 +103,20 @@ const Index = () => {
             </div>
           </div>
           {selectedRole && (
-            <Button onClick={handleDownload} className="gap-2">
-              <Download className="w-4 h-4" />
-              Download Card
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowBack(!showBack)} 
+                className="gap-2"
+              >
+                <FlipHorizontal2 className="w-4 h-4" />
+                {showBack ? "Show Front" : "Show Back"}
+              </Button>
+              <Button onClick={handleDownload} className="gap-2">
+                <Download className="w-4 h-4" />
+                Download Card
+              </Button>
+            </div>
           )}
         </div>
       </header>
@@ -75,23 +127,48 @@ const Index = () => {
           <RoleSelector selectedRole={selectedRole} onRoleSelect={setSelectedRole} />
 
           {selectedRole && (
-            <div className="grid lg:grid-cols-2 gap-8">
-              <IDCardForm
-                role={selectedRole}
-                formData={formData}
-                onFormChange={handleFormChange}
-                onPhotoUpload={handlePhotoUpload}
-                onLogoUpload={handleLogoUpload}
-                photoPreview={photoPreview}
-                logoPreview={logoPreview}
-              />
-              <IDCardPreview
-                role={selectedRole}
-                formData={formData}
-                photoPreview={photoPreview}
-                logoPreview={logoPreview}
-                cardRef={cardRef}
-              />
+            <div className="space-y-8">
+              {/* Template & Style Selection */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                <TemplateSelector
+                  selectedTemplateId={selectedTemplateId}
+                  onTemplateSelect={handleTemplateChange}
+                />
+                <StyleCustomizer
+                  primaryColor={customPrimaryColor}
+                  secondaryColor={customSecondaryColor}
+                  onPrimaryColorChange={setCustomPrimaryColor}
+                  onSecondaryColorChange={setCustomSecondaryColor}
+                />
+              </div>
+
+              {/* Form & Preview */}
+              <div className="grid lg:grid-cols-2 gap-8">
+                <IDCardForm
+                  role={selectedRole}
+                  formData={formData}
+                  onFormChange={handleFormChange}
+                  onPhotoUpload={handlePhotoUpload}
+                  onLogoUpload={handleLogoUpload}
+                  photoPreview={photoPreview}
+                  logoPreview={logoPreview}
+                  photoShape={photoShape}
+                  onPhotoShapeChange={setPhotoShape}
+                  validationErrors={validationErrors}
+                />
+                <IDCardPreview
+                  role={selectedRole}
+                  formData={formData}
+                  photoPreview={photoPreview}
+                  logoPreview={logoPreview}
+                  cardRef={cardRef}
+                  templateId={selectedTemplateId}
+                  photoShape={photoShape}
+                  customPrimaryColor={customPrimaryColor}
+                  customSecondaryColor={customSecondaryColor}
+                  showBack={showBack}
+                />
+              </div>
             </div>
           )}
         </div>
